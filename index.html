@@ -20,10 +20,16 @@
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--creme);color:var(--texto);line-height:1.5}
 
-  header{background:linear-gradient(135deg,#b76e83,#6e3247);color:#fff;padding:30px 16px 24px;text-align:center}
-  header h1{font-family:Georgia,'Times New Roman',serif;font-size:1.75rem;letter-spacing:2.5px;font-weight:600}
-  header .filete{width:56px;height:2px;background:linear-gradient(90deg,transparent,#e9c99a,transparent);margin:9px auto 7px}
-  header p{opacity:.94;font-size:.92rem;letter-spacing:.3px}
+  header{background:radial-gradient(120% 160% at 50% -20%,#a6566f 0%,#7d3350 55%,#521f34 100%);color:#fff;padding:26px 16px 24px;text-align:center;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 40% at 50% 0%,rgba(233,201,154,.18),transparent 70%);pointer-events:none}
+  .avatar{width:98px;height:98px;margin:0 auto 12px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#e9c99a,#f7ecd2,#c9a24b,#e9c99a);box-shadow:0 6px 22px rgba(0,0,0,.35);position:relative}
+  .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:2.5px solid #5a2338}
+  @media(min-width:640px){.avatar{width:118px;height:118px}}
+  header h1{font-family:Georgia,'Times New Roman',serif;font-size:1.55rem;letter-spacing:3px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.25);position:relative}
+  @media(min-width:640px){header h1{font-size:1.85rem}}
+  header .filete{width:130px;height:2px;background:linear-gradient(90deg,transparent,#e9c99a 30%,#f7ecd2 50%,#e9c99a 70%,transparent);margin:10px auto 8px;position:relative}
+  header .filete::before{content:"✦";position:absolute;top:-9px;left:50%;transform:translateX(-50%);color:#e9c99a;font-size:.7rem;background:transparent}
+  header p{opacity:.92;font-size:.88rem;letter-spacing:.3px;position:relative}
 
   .regra{background:#fbeef1;border-bottom:1px solid var(--borda);text-align:center;padding:10px 16px;font-size:.88rem;color:#95566e}
   .regra strong{color:var(--terracota-escuro)}
@@ -163,6 +169,7 @@
 <body>
 
 <header>
+  <div class="avatar"><img src="https://vitrine-da-bruninha.vercel.app/bruna.jpg" alt="Bruna"></div>
   <h1>VITRINE DA BRUNA</h1>
   <div class="filete"></div>
   <p>Novos e usados com preço bom · Escolha, pague no Pix e combine a retirada</p>
