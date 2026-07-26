@@ -39,11 +39,11 @@
 
   .contagem{max-width:1060px;margin:14px auto 0;padding:0 16px;font-size:.82rem;color:var(--texto-suave)}
 
-  .grade{max-width:1060px;margin:10px auto 30px;padding:0 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
-  @media(min-width:640px){.grade{grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:18px}}
+  .grade{max-width:1060px;margin:10px auto 30px;padding:0 12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:640px){.grade{grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:18px;padding:0 16px}}
 
   .card{background:var(--card);border:1px solid var(--borda);border-radius:14px;overflow:hidden;box-shadow:var(--sombra);display:flex;flex-direction:column;position:relative}
-  .foto{position:relative;height:150px;display:flex;align-items:center;justify-content:center;font-size:52px;overflow:hidden}
+  .foto{position:relative;height:124px;display:flex;align-items:center;justify-content:center;font-size:42px;overflow:hidden}
   @media(min-width:640px){.foto{height:185px;font-size:64px}}
   .foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;cursor:zoom-in}
   .fnav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(58,42,48,.45);color:#fff;border:none;width:27px;height:27px;border-radius:50%;cursor:pointer;font-size:15px;z-index:3;display:flex;align-items:center;justify-content:center}
@@ -53,17 +53,27 @@
   .fdot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 0 3px rgba(0,0,0,.3)}
   .fdot.on{background:#fff}
   .fcount{position:absolute;top:10px;right:10px;background:rgba(58,42,48,.55);color:#fff;font-size:.66rem;padding:2px 8px;border-radius:999px;z-index:3}
-  .badge{position:absolute;top:10px;left:10px;font-size:.68rem;font-weight:700;letter-spacing:.4px;padding:3px 9px;border-radius:999px;text-transform:uppercase;z-index:3}
+  .badge{position:absolute;top:8px;left:8px;font-size:.6rem;font-weight:700;letter-spacing:.4px;padding:2px 8px;border-radius:999px;text-transform:uppercase;z-index:3}
+  @media(min-width:640px){.badge{top:10px;left:10px;font-size:.68rem;padding:3px 9px}}
   .badge.novo{background:#f6ecd8;color:#96742f}
   .badge.usado{background:#f9e3e9;color:var(--terracota)}
-  .info{padding:12px 13px 14px;display:flex;flex-direction:column;flex:1}
-  .nome{font-size:.92rem;font-weight:600;line-height:1.3}
-  .estado{font-size:.76rem;color:var(--texto-suave);margin-top:3px;flex:1}
-  .preco{font-size:1.15rem;font-weight:700;color:var(--terracota-escuro);margin-top:8px}
-  .preco small{font-size:.7rem;font-weight:500;color:var(--texto-suave)}
-  .comprar{margin-top:9px;background:var(--verde);color:#fff;border:none;border-radius:9px;padding:10px 8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s}
+  .info{padding:9px 10px 11px;display:flex;flex-direction:column;flex:1}
+  .nome{font-size:.8rem;font-weight:600;line-height:1.25}
+  .estado{font-size:.68rem;color:var(--texto-suave);margin-top:2px;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .preco{font-size:1rem;font-weight:700;color:var(--terracota-escuro);margin-top:5px}
+  .preco small{font-size:.64rem;font-weight:500;color:var(--texto-suave)}
+  .comprar{margin-top:7px;background:var(--verde);color:#fff;border:none;border-radius:9px;padding:8px 6px;font-size:.76rem;font-weight:600;cursor:pointer;transition:.15s}
   .comprar:hover{filter:brightness(1.08)}
-  .zap{margin-top:6px;text-align:center;font-size:.76rem;color:var(--texto-suave);text-decoration:none}
+  .zap{margin-top:5px;text-align:center;font-size:.68rem;color:var(--texto-suave);text-decoration:none}
+  @media(min-width:640px){
+    .info{padding:12px 13px 14px}
+    .nome{font-size:.92rem}
+    .estado{font-size:.76rem;-webkit-line-clamp:3}
+    .preco{font-size:1.15rem}
+    .preco small{font-size:.7rem}
+    .comprar{margin-top:9px;padding:10px 8px;font-size:.85rem}
+    .zap{margin-top:6px;font-size:.76rem}
+  }
   .zap:hover{color:var(--verde)}
 
   .card.vendido .foto,.card.vendido .info{filter:grayscale(1);opacity:.55}
@@ -100,9 +110,16 @@
   .radios label{flex:1;margin:0;border:1.5px solid var(--borda);border-radius:9px;padding:10px;text-align:center;cursor:pointer;font-weight:600;color:var(--texto-suave)}
   .radios input{display:none}
   .radios label.sel{border-color:var(--terracota);background:#fbeef1;color:var(--terracota-escuro)}
-  .fotos-area{border:2px dashed var(--borda);border-radius:11px;padding:16px;text-align:center;cursor:pointer;color:var(--texto-suave);font-size:.85rem;background:var(--creme)}
+  .cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .cat-chip{border:1px solid var(--borda);background:#fff;color:var(--texto-suave);border-radius:999px;padding:7px 13px;font-size:.8rem;cursor:pointer}
+  .cat-chip.sel{background:var(--terracota);border-color:var(--terracota);color:#fff;font-weight:700}
+  .fotos-area{border:none;border-radius:11px;padding:14px;text-align:center;cursor:pointer;color:#fff;font-size:.95rem;font-weight:700;background:var(--terracota);box-shadow:var(--sombra)}
+  .fotos-area small{display:block;font-weight:400;opacity:.85;font-size:.75rem;margin-top:2px}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--borda)}
+  .thumbs .th{position:relative}
+  .thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--borda);display:block}
+  .thumbs .tira{position:absolute;top:-6px;right:-6px;background:var(--texto);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer}
+  .thumbs .capa{position:absolute;bottom:2px;left:2px;background:rgba(110,50,71,.85);color:#fff;font-size:.55rem;padding:1px 5px;border-radius:5px}
   .btn-salvar{width:100%;margin-top:18px;background:var(--verde);color:#fff;border:none;border-radius:11px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer}
   .btn-salvar:disabled{opacity:.6;cursor:default}
   .form-status{margin-top:10px;font-size:.82rem;color:var(--texto-suave);text-align:center;min-height:1.2em}
@@ -184,8 +201,9 @@
     <input type="text" id="fNome" placeholder="Ex.: Vestido floral tam. M">
     <label>Preço (R$) *</label>
     <input type="number" id="fPreco" inputmode="decimal" step="0.01" min="1" placeholder="Ex.: 35">
-    <label>Categoria *</label>
-    <input type="text" id="fCat" list="listaCats" placeholder="Ex.: Roupas">
+    <label>Categoria * (toque numa, ou escreva uma nova)</label>
+    <div class="cat-chips" id="catChips"></div>
+    <input type="text" id="fCat" list="listaCats" placeholder="Outra categoria...">
     <datalist id="listaCats"></datalist>
     <label>Condição *</label>
     <div class="radios" id="fCond">
@@ -194,8 +212,8 @@
     </div>
     <label>Descrição (estado, medida, defeito...)</label>
     <textarea id="fDesc" placeholder="Ex.: Ótimo estado, sem manchas. Veste 38-40."></textarea>
-    <label>Fotos * (a 1ª vira a capa)</label>
-    <div class="fotos-area" id="fotosArea">📷 Toque pra escolher as fotos<br><small>pode escolher várias de uma vez</small></div>
+    <label>Fotos do produto * (até 5 — a 1ª vira a capa)</label>
+    <div class="fotos-area" id="fotosArea">📷 Adicionar fotos<small>abre a galeria do celular · pode escolher várias</small></div>
     <input type="file" id="fFotos" accept="image/*" multiple style="display:none">
     <div class="thumbs" id="thumbs"></div>
     <button class="btn-salvar" id="btnSalvar">Salvar e publicar</button>
@@ -250,7 +268,9 @@ const ADMIN = new URLSearchParams(location.search).get("admin") === ADMIN_SENHA;
 const H = {apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY};
 const HJ = {...H, "Content-Type": "application/json"};
 
-const EMOJI_CAT = {"Roupas":"👗","Calçados":"👟","Cozinha":"🍳","Eletro":"🌀","Eletrodomésticos":"🌀","Brinquedos":"🧸","Livros":"📚","Decoração":"🖼️","Outros":"🧺"};
+const EMOJI_CAT = {"Roupas":"👗","Calçados":"👟","Bolsas":"👜","Acessórios":"💍","Infantil":"🧒","Cozinha":"🍳","Eletro":"🌀","Eletrodomésticos":"🌀","Brinquedos":"🧸","Livros":"📚","Decoração":"🖼️","Beleza":"💄","Cama e Banho":"🛏️","Outros":"🧺"};
+const CATS_PADRAO = ["Roupas","Calçados","Bolsas","Acessórios","Infantil","Cozinha","Eletro","Brinquedos","Livros","Decoração","Beleza","Cama e Banho"];
+const MAX_FOTOS = 5;
 const GRADS = ["#fbe3e9,#f9efe8","#f3e6ee,#f9eef0","#f9ece4,#f6e3ea","#fdeef2,#f7e8dd","#f6e8dc,#fbeee9","#f3e4e9,#f9f0ea"];
 
 let PRODUTOS = [];
@@ -554,19 +574,52 @@ document.getElementById("fotosArea").onclick = () => fFotos.click();
 document.querySelectorAll("#fCond label").forEach(l => {
   l.onclick = () => { condSel = l.dataset.v; document.querySelectorAll("#fCond label").forEach(x => x.classList.toggle("sel", x === l)); };
 });
-fFotos.onchange = () => {
-  fotosSelecionadas = [...fFotos.files];
-  thumbs.innerHTML = "";
-  fotosSelecionadas.forEach(f => {
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(f);
-    thumbs.appendChild(img);
+
+/* categorias prontas + nova */
+let catFormSel = "";
+function montaCatChips(){
+  const el = document.getElementById("catChips");
+  const cats = [...new Set([...CATS_PADRAO, ...PRODUTOS.map(p => p.cat)])];
+  el.innerHTML = "";
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cat-chip" + (c === catFormSel ? " sel" : "");
+    b.textContent = c;
+    b.onclick = () => { catFormSel = (catFormSel === c ? "" : c); document.getElementById("fCat").value = ""; montaCatChips(); };
+    el.appendChild(b);
   });
+}
+document.getElementById("fCat").oninput = function(){ if (this.value.trim() && catFormSel) { catFormSel = ""; montaCatChips(); } };
+
+/* fotos: acumula até 5, toque no × remove, 1ª é a capa */
+fFotos.onchange = () => {
+  const total = fotosSelecionadas.length + fFotos.files.length;
+  fotosSelecionadas = [...fotosSelecionadas, ...fFotos.files].slice(0, MAX_FOTOS);
+  if (total > MAX_FOTOS) mostraToast("Máximo de " + MAX_FOTOS + " fotos por produto — ficaram as " + MAX_FOTOS + " primeiras.");
+  fFotos.value = "";
+  desenhaThumbs();
 };
+function desenhaThumbs(){
+  thumbs.innerHTML = "";
+  fotosSelecionadas.forEach((f, i) => {
+    const d = document.createElement("div"); d.className = "th";
+    const img = document.createElement("img"); img.src = URL.createObjectURL(f);
+    const x = document.createElement("button"); x.type = "button"; x.className = "tira"; x.textContent = "×"; x.title = "Remover";
+    x.onclick = () => { fotosSelecionadas.splice(i, 1); desenhaThumbs(); };
+    d.appendChild(img); d.appendChild(x);
+    if (i === 0) { const c = document.createElement("span"); c.className = "capa"; c.textContent = "CAPA"; d.appendChild(c); }
+    thumbs.appendChild(d);
+  });
+  document.getElementById("fotosArea").innerHTML = fotosSelecionadas.length
+    ? "📷 Adicionar mais fotos<small>" + fotosSelecionadas.length + " de " + MAX_FOTOS + " escolhida(s)</small>"
+    : "📷 Adicionar fotos<small>abre a galeria do celular · pode escolher várias</small>";
+}
 
 function abreForm(){
   ["fNome","fPreco","fCat","fDesc"].forEach(id => document.getElementById(id).value = "");
-  fFotos.value = ""; fotosSelecionadas = []; thumbs.innerHTML = ""; formStatus.textContent = "";
+  fFotos.value = ""; fotosSelecionadas = []; formStatus.textContent = ""; catFormSel = "";
+  montaCatChips(); desenhaThumbs();
   document.getElementById("btnSalvar").disabled = false;
   formFundo.classList.add("aberta");
 }
@@ -610,7 +663,7 @@ async function uploadFoto(blob, nomeBase, i){
 document.getElementById("btnSalvar").onclick = async () => {
   const nome = document.getElementById("fNome").value.trim();
   const preco = parseFloat(String(document.getElementById("fPreco").value).replace(",", "."));
-  const cat = document.getElementById("fCat").value.trim() || "Outros";
+  const cat = catFormSel || document.getElementById("fCat").value.trim() || "Outros";
   const desc = document.getElementById("fDesc").value.trim();
   if (!nome) { formStatus.textContent = "Falta o nome do produto."; return; }
   if (!preco || preco <= 0) { formStatus.textContent = "Confere o preço."; return; }
