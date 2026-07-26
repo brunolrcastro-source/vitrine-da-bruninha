@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitrine da Bruninha — Escolha, pague e retire</title>
+<style>
+  :root{
+    --terracota:#a64d68;        /* rosa profundo (principal) */
+    --terracota-escuro:#6e3247; /* vinho rosado */
+    --creme:#faf4f5;            /* blush claro (fundo) */
+    --card:#fffdfd;
+    --texto:#3a2a30;
+    --texto-suave:#8a7178;
+    --verde:#8e4160;            /* botão comprar: rosé escuro */
+    --dourado:#b8935a;          /* acento champanhe */
+    --borda:#eddce1;
+    --sombra:0 2px 12px rgba(110,50,71,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--creme);color:var(--texto);line-height:1.5}
+
+  header{background:linear-gradient(135deg,#b76e83,#6e3247);color:#fff;padding:30px 16px 24px;text-align:center}
+  header h1{font-family:Georgia,'Times New Roman',serif;font-size:1.75rem;letter-spacing:2.5px;font-weight:600}
+  header .filete{width:56px;height:2px;background:linear-gradient(90deg,transparent,#e9c99a,transparent);margin:9px auto 7px}
+  header p{opacity:.94;font-size:.92rem;letter-spacing:.3px}
+
+  .regra{background:#fbeef1;border-bottom:1px solid var(--borda);text-align:center;padding:10px 16px;font-size:.88rem;color:#95566e}
+  .regra strong{color:var(--terracota-escuro)}
+
+  .filtros{position:sticky;top:0;background:var(--creme);z-index:10;padding:14px 12px 10px;border-bottom:1px solid var(--borda)}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;border:1px solid var(--borda);background:#fff;color:var(--texto-suave);border-radius:999px;padding:7px 15px;font-size:.86rem;cursor:pointer;transition:.15s;white-space:nowrap}
+  .chip.ativo{background:var(--terracota);border-color:var(--terracota);color:#fff;font-weight:600}
+  .condicao{display:flex;gap:6px;margin-top:6px}
+  .cond-btn{border:1px solid var(--borda);background:#fff;color:var(--texto-suave);border-radius:8px;padding:5px 13px;font-size:.8rem;cursor:pointer;transition:.15s}
+  .cond-btn.ativo{background:var(--texto);border-color:var(--texto);color:#fff}
+
+  .contagem{max-width:1060px;margin:14px auto 0;padding:0 16px;font-size:.82rem;color:var(--texto-suave)}
+
+  .grade{max-width:1060px;margin:10px auto 30px;padding:0 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
+  @media(min-width:640px){.grade{grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:18px}}
+
+  .card{background:var(--card);border:1px solid var(--borda);border-radius:14px;overflow:hidden;box-shadow:var(--sombra);display:flex;flex-direction:column;position:relative}
+  .foto{position:relative;height:150px;display:flex;align-items:center;justify-content:center;font-size:52px;overflow:hidden}
+  @media(min-width:640px){.foto{height:185px;font-size:64px}}
+  .foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+  .fnav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(58,42,48,.45);color:#fff;border:none;width:27px;height:27px;border-radius:50%;cursor:pointer;font-size:15px;z-index:3;display:flex;align-items:center;justify-content:center}
+  .fnav:hover{background:rgba(58,42,48,.7)}
+  .fnav.prev{left:7px}.fnav.next{right:7px}
+  .fdots{position:absolute;bottom:7px;left:0;right:0;display:flex;justify-content:center;gap:5px;z-index:3;pointer-events:none}
+  .fdot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 0 3px rgba(0,0,0,.3)}
+  .fdot.on{background:#fff}
+  .fcount{position:absolute;top:10px;right:10px;background:rgba(58,42,48,.55);color:#fff;font-size:.66rem;padding:2px 8px;border-radius:999px;z-index:3}
+  .badge{position:absolute;top:10px;left:10px;font-size:.68rem;font-weight:700;letter-spacing:.4px;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+  .badge.novo{background:#f6ecd8;color:#96742f}
+  .badge.usado{background:#f9e3e9;color:var(--terracota)}
+  .info{padding:12px 13px 14px;display:flex;flex-direction:column;flex:1}
+  .nome{font-size:.92rem;font-weight:600;line-height:1.3}
+  .estado{font-size:.76rem;color:var(--texto-suave);margin-top:3px;flex:1}
+  .preco{font-size:1.15rem;font-weight:700;color:var(--terracota-escuro);margin-top:8px}
+  .preco small{font-size:.7rem;font-weight:500;color:var(--texto-suave)}
+  .comprar{margin-top:9px;background:var(--verde);color:#fff;border:none;border-radius:9px;padding:10px 8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s}
+  .comprar:hover{filter:brightness(1.08)}
+  .zap{margin-top:6px;text-align:center;font-size:.76rem;color:var(--texto-suave);text-decoration:none}
+  .zap:hover{color:var(--verde)}
+
+  .card.vendido .foto,.card.vendido .info{filter:grayscale(1);opacity:.55}
+  .selo-vendido{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}
+  .selo-vendido span{background:rgba(110,50,71,.88);color:#fff;font-weight:800;letter-spacing:2px;padding:8px 22px;border-radius:8px;transform:rotate(-8deg);font-size:.95rem}
+
+  .card.reservado .foto{opacity:.8}
+  .selo-reservado{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}
+  .selo-reservado span{background:rgba(184,147,90,.93);color:#fff;font-weight:800;letter-spacing:1.5px;padding:7px 18px;border-radius:8px;transform:rotate(-8deg);font-size:.82rem}
+
+  /* modo da Bruna (?admin=senha) */
+  .admin-aviso{max-width:1060px;margin:12px auto 0;padding:9px 14px;background:#f6ecd8;border:1px solid #e2cba4;border-radius:10px;font-size:.8rem;color:#7a5c25}
+  .admin-aviso b{color:#96742f}
+  .admin-bar{display:flex;gap:5px;padding:8px 10px;background:#f7edf0;border-top:1px dashed var(--borda)}
+  .admin-bar button{flex:1;border:1px solid var(--borda);background:#fff;border-radius:7px;padding:6px 2px;font-size:.68rem;cursor:pointer;color:var(--texto-suave)}
+  .admin-bar button.on{background:var(--terracota);color:#fff;border-color:var(--terracota);font-weight:700}
+
+  .vazio{grid-column:1/-1;text-align:center;color:var(--texto-suave);padding:40px 0;font-size:.9rem}
+
+  footer{background:#fff;border-top:1px solid var(--borda);padding:26px 16px;text-align:center;font-size:.86rem;color:var(--texto-suave)}
+  footer strong{color:var(--texto)}
+  .btn-zap-footer{display:inline-block;margin-top:12px;background:#25d366;color:#fff;text-decoration:none;font-weight:600;padding:10px 22px;border-radius:999px;font-size:.9rem}
+
+  /* lightbox: foto em tela cheia */
+  .lightbox{position:fixed;inset:0;background:rgba(32,14,22,.94);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:18px}
+  .lightbox.aberta{display:flex}
+  .lightbox img{max-width:94vw;max-height:72vh;border-radius:12px;background:#fff}
+  .lb-fechar{position:absolute;top:12px;right:16px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1}
+  .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.14);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer}
+  .lb-nav:hover{background:rgba(255,255,255,.28)}
+  .lb-nav.prev{left:10px}.lb-nav.next{right:10px}
+  .lb-legenda{color:#fff;margin-top:12px;font-size:.88rem;opacity:.9;text-align:center}
+
+  /* janela do Pix */
+  .pix-fundo{position:fixed;inset:0;background:rgba(32,14,22,.55);display:none;align-items:flex-end;justify-content:center;z-index:90}
+  .pix-fundo.aberta{display:flex}
+  @media(min-width:640px){.pix-fundo{align-items:center}}
+  .pix-box{background:#fff;border-radius:18px 18px 0 0;max-width:430px;width:100%;padding:22px 20px 26px;position:relative;box-shadow:0 -4px 30px rgba(0,0,0,.2)}
+  @media(min-width:640px){.pix-box{border-radius:18px}}
+  .pix-box h3{font-family:Georgia,serif;color:var(--terracota-escuro);font-size:1.15rem;margin-bottom:4px}
+  .pix-produto{font-size:.9rem;color:var(--texto-suave);margin-bottom:12px}
+  .pix-produto strong{color:var(--texto)}
+  .pix-chave{display:flex;align-items:center;gap:8px;background:var(--creme);border:1.5px dashed var(--terracota);border-radius:10px;padding:11px 13px;margin-bottom:4px}
+  .pix-chave code{flex:1;font-size:.95rem;color:var(--terracota-escuro);word-break:break-all}
+  .pix-copiar{background:var(--terracota);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .pix-titular{font-size:.76rem;color:var(--texto-suave);margin-bottom:12px}
+  .pix-passos{font-size:.84rem;color:var(--texto);margin:0 0 14px 18px}
+  .pix-passos li{margin-bottom:4px}
+  .pix-reservar{display:block;width:100%;margin-bottom:10px;background:#fff;border:1.5px solid var(--terracota);color:var(--terracota-escuro);font-weight:700;padding:11px;border-radius:11px;font-size:.9rem;cursor:pointer}
+  .pix-reservar:disabled{opacity:.55;cursor:default}
+  .pix-zap{display:block;text-align:center;background:#25d366;color:#fff;text-decoration:none;font-weight:700;padding:13px;border-radius:11px;font-size:.95rem}
+  .pix-regra{font-size:.74rem;color:var(--texto-suave);text-align:center;margin-top:10px}
+  .pix-fechar{position:absolute;top:10px;right:14px;background:none;border:none;font-size:26px;color:var(--texto-suave);cursor:pointer;line-height:1}
+
+  /* aviso placeholder (sem alert nativo) */
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--texto);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;max-width:90%;text-align:center;transition:transform .25s;z-index:50}
+  .toast.mostra{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>VITRINE DA BRUNINHA</h1>
+  <div class="filete"></div>
+  <p>Novos e usados com preço bom · Escolha, pague no Pix e combine a retirada</p>
+</header>
+
+<div class="regra">
+  <strong>Sem reserva e sem fiado:</strong> o produto é de quem concluir o pagamento primeiro. Pagou, é seu!
+</div>
+
+<div class="filtros">
+  <div class="chips" id="chips"></div>
+  <div class="condicao" id="condicao">
+    <button class="cond-btn ativo" data-cond="todos">Todos</button>
+    <button class="cond-btn" data-cond="novo">Só novos</button>
+    <button class="cond-btn" data-cond="usado">Só usados</button>
+  </div>
+</div>
+
+<div class="contagem" id="contagem"></div>
+<main class="grade" id="grade"></main>
+
+<footer>
+  <strong>Retirada:</strong> grátis, em casa (endereço enviado após o pagamento)<br>
+  <strong>Entrega no bairro:</strong> a combinar pelo WhatsApp<br>
+  <a class="btn-zap-footer" id="zapFooter" href="#" target="_blank">💬 Falar no WhatsApp</a>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="pix-fundo" id="pixFundo">
+  <div class="pix-box">
+    <button class="pix-fechar" id="pixFechar" title="Fechar">×</button>
+    <h3>✓ Chave Pix copiada!</h3>
+    <div class="pix-produto" id="pixProduto"></div>
+    <div class="pix-chave"><code id="pixChaveTexto"></code><button class="pix-copiar" id="pixCopiar">Copiar</button></div>
+    <div class="pix-titular" id="pixTitular"></div>
+    <ol class="pix-passos">
+      <li>Abra o app do seu banco</li>
+      <li>Pix → Pagar → <strong>colar a chave</strong></li>
+      <li>Pague o valor certinho</li>
+      <li>Mande o comprovante no WhatsApp 👇</li>
+    </ol>
+    <button class="pix-reservar" id="pixReservar" style="display:none">🔒 Já fiz o Pix — reservar o produto (2h)</button>
+    <a class="pix-zap" id="pixZap" href="#" target="_blank">💬 Enviar comprovante no WhatsApp</a>
+    <div class="pix-regra">O produto só é seu depois que o comprovante for confirmado — quem paga primeiro leva.</div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-fechar" id="lbFechar" title="Fechar">×</button>
+  <button class="lb-nav prev" id="lbPrev">‹</button>
+  <img id="lbImg" alt="">
+  <button class="lb-nav next" id="lbNext">›</button>
+  <div class="lb-legenda" id="lbLegenda"></div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — só mexer aqui
+   ============================================================
+   1. WHATSAPP: número com DDI+DDD, só dígitos (55 + DDD + número)
+   2. CHAVE_PIX: a chave Pix da Bruna (celular, CPF, e-mail ou aleatória)
+      TITULAR_PIX: nome que aparece no banco, pra compradora conferir
+   3. TEMPO REAL (passo B — opcional): siga o guia PASSO-B.txt,
+      crie o projeto grátis no Supabase e cole SUPABASE_URL e
+      SUPABASE_KEY abaixo. Enquanto estiverem vazios, a vitrine
+      funciona no modo simples (sem reserva em tempo real).
+      ADMIN_SENHA: senha da Bruna. Ela abre o link da vitrine com
+      ?admin=SENHA no final pra ver os botões de marcar
+      Livre / Reservado / Vendido em cada produto.
+   4. PRODUTOS: cada item da lista é um card na vitrine.
+      - id:        código único do produto (não repete e NUNCA muda
+                   depois de publicado — é ele que guarda o status)
+      - cat:       categoria (vira botão de filtro automaticamente)
+      - cond:      "novo" ou "usado"
+      - estado:    descrição honesta (marcas de uso, defeito, medida)
+      - fotos:     lista de fotos do produto, entre colchetes.
+                   A 1ª é a capa. Pode ter quantas quiser.
+                   Como usar: crie uma pasta chamada "fotos" ao lado
+                   deste arquivo, salve as imagens lá com nome do
+                   produto (ex.: vestido-1.jpg, vestido-2.jpg) e escreva:
+                   fotos:["fotos/vestido-1.jpg","fotos/vestido-2.jpg"]
+                   Sem foto ainda? Deixe fotos:[] que aparece o emoji.
+                   (Os 2 primeiros produtos abaixo têm fotos de
+                   demonstração geradas só pra mostrar a galeria.)
+      - vendido:   true = fica com selo VENDIDO (apagar da lista depois)
+      - emoji:     imagem provisória enquanto não há foto
+   ============================================================ */
+const WHATSAPP = "5571999999999"; // <-- TROCAR pelo número real
+const CHAVE_PIX = "71999999999";  // <-- TROCAR pela chave Pix real da Bruna
+const TITULAR_PIX = "Bruna";      // <-- nome que aparece no banco ao pagar
+
+/* passo B — tempo real (deixar vazio até configurar o Supabase) */
+const SUPABASE_URL = "";              // ex.: https://abcdefgh.supabase.co
+const SUPABASE_KEY = "";              // chave "anon public" do projeto
+const ADMIN_SENHA  = "bruninha2026";  // <-- TROCAR: senha do modo da Bruna
+const RESERVA_MINUTOS = 120;          // reserva segura o produto por 2h
+
+// gera imagem de demonstração (apagar quando entrarem as fotos reais)
+const fotoDemo = (rotulo,c1,c2) => "data:image/svg+xml;utf8," + encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='450'>" +
+  "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>" +
+  "<stop offset='0' stop-color='" + c1 + "'/><stop offset='1' stop-color='" + c2 + "'/></linearGradient></defs>" +
+  "<rect width='600' height='450' fill='url(#g)'/>" +
+  "<text x='300' y='208' font-size='34' text-anchor='middle' fill='#6e3247' font-family='Georgia'>" + rotulo + "</text>" +
+  "<text x='300' y='252' font-size='19' text-anchor='middle' fill='#95566e' font-family='sans-serif'>aqui entra a foto real do produto</text></svg>");
+
+const PRODUTOS = [
+  {id:"vestido-floral-m", nome:"Vestido floral tam. M", cat:"Roupas", cond:"usado", estado:"Ótimo estado, sem manchas", preco:35, emoji:"👗", grad:"#fbe3e9,#f9efe8",
+   fotos:[fotoDemo("Foto 1 — frente","#fbe3e9","#f9efe8"), fotoDemo("Foto 2 — costas","#f9efe8","#f3e6ee"), fotoDemo("Foto 3 — detalhe do tecido","#f3e6ee","#fbe3e9")],
+   vendido:false},
+  {id:"camisa-social-g", nome:"Camisa social masc. G", cat:"Roupas", cond:"novo", estado:"Nova, com etiqueta", preco:55, emoji:"👔", grad:"#f3e6ee,#f9eef0", fotos:[], vendido:false},
+  {id:"tenis-infantil-28", nome:"Tênis infantil nº 28", cat:"Calçados", cond:"usado", estado:"Pouco uso, sola íntegra", preco:40, emoji:"👟", grad:"#f9ece4,#f6e3ea",
+   fotos:[fotoDemo("Foto 1 — par completo","#f9ece4","#f6e3ea"), fotoDemo("Foto 2 — solado","#f6e3ea","#f9ece4")],
+   vendido:false},
+  {id:"sandalia-fem-36", nome:"Sandália feminina nº 36", cat:"Calçados", cond:"novo", estado:"Nova na caixa", preco:60, emoji:"👡", grad:"#fdeef2,#f7e8dd", vendido:false},
+  {id:"jogo-panelas-5", nome:"Jogo de panelas 5 peças", cat:"Cozinha", cond:"usado", estado:"Antiaderente conservado", preco:90, emoji:"🍳", grad:"#f6e8dc,#fbeee9", vendido:false},
+  {id:"kit-potes-10", nome:"Kit 10 potes herméticos", cat:"Cozinha", cond:"novo", estado:"Novo, lacrado", preco:45, emoji:"🥡", grad:"#f3e4e9,#f9f0ea", vendido:false},
+  {id:"ventilador-mondial", nome:"Ventilador Mondial 40cm", cat:"Eletro", cond:"usado", estado:"Funcionando, marcas de uso", preco:80, emoji:"🌀", grad:"#efe3e7,#f5eef0", vendido:true},
+  {id:"liquidificador-philips", nome:"Liquidificador Philips", cat:"Eletro", cond:"usado", estado:"Funciona bem, copo sem trinca", preco:70, emoji:"🥤", grad:"#fbe9e4,#f7e6ef", vendido:false},
+  {id:"quebra-cabeca-500", nome:"Quebra-cabeça 500 pçs", cat:"Brinquedos", cond:"usado", estado:"Completo, conferido", preco:25, emoji:"🧩", grad:"#f7eadf,#f3e3ec", vendido:false},
+  {id:"boneca-acessorios", nome:"Boneca com acessórios", cat:"Brinquedos", cond:"novo", estado:"Nova, na embalagem", preco:50, emoji:"🪆", grad:"#fce8ee,#f6ecdf", vendido:false},
+  {id:"kit-3-livros", nome:"Kit 3 livros de romance", cat:"Livros", cond:"usado", estado:"Bem conservados", preco:30, emoji:"📚", grad:"#f0e4ec,#f8eae6", vendido:false},
+  {id:"quadro-40x60", nome:"Quadro decorativo 40x60", cat:"Decoração", cond:"novo", estado:"Novo, com plástico", preco:65, emoji:"🖼️", grad:"#f9f0e3,#f7e5eb", vendido:false},
+];
+/* ====================== fim da configuração ====================== */
+
+let catAtiva = "Todos";
+let condAtiva = "todos";
+
+const grade = document.getElementById("grade");
+const chipsEl = document.getElementById("chips");
+const contagem = document.getElementById("contagem");
+const toast = document.getElementById("toast");
+
+// categorias geradas automaticamente a partir dos produtos
+const cats = ["Todos", ...new Set(PRODUTOS.map(p => p.cat))];
+cats.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "chip" + (c === "Todos" ? " ativo" : "");
+  b.textContent = c;
+  b.onclick = () => { catAtiva = c; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("ativo", x === b)); render(); };
+  chipsEl.appendChild(b);
+});
+
+document.querySelectorAll(".cond-btn").forEach(b => {
+  b.onclick = () => { condAtiva = b.dataset.cond; document.querySelectorAll(".cond-btn").forEach(x => x.classList.toggle("ativo", x === b)); render(); };
+});
+
+function real(v){ return "R$ " + v.toFixed(2).replace(".", ",").replace(",00",""); }
+
+function mostraToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("mostra");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove("mostra"), 3200);
+}
+
+// copia texto com fallback pra navegadores antigos
+function copiaTexto(txt){
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(txt).then(() => true).catch(() => copiaFallback(txt));
+  }
+  return Promise.resolve(copiaFallback(txt));
+}
+function copiaFallback(txt){
+  const ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch(e) {}
+  document.body.removeChild(ta);
+  return ok;
+}
+
+/* ---------- passo B: status em tempo real (Supabase) ---------- */
+const supabaseAtivo = () => SUPABASE_URL !== "" && SUPABASE_KEY !== "";
+const ADMIN = new URLSearchParams(location.search).get("admin") === ADMIN_SENHA;
+const STATUS = {}; // id do produto -> {estado, reservado_em}
+
+async function carregaStatus(){
+  if (!supabaseAtivo()) return;
+  try {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/status?select=*", {
+      headers: {apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY}
+    });
+    if (!r.ok) return;
+    const linhas = await r.json();
+    Object.keys(STATUS).forEach(k => delete STATUS[k]);
+    linhas.forEach(x => STATUS[x.id] = x);
+    render();
+  } catch(e) {}
+}
+
+// estado efetivo do produto: vendido > reservado (dentro do prazo) > disponivel
+function estadoDe(p){
+  if (p.vendido) return "vendido";
+  const s = STATUS[p.id];
+  if (!s) return "disponivel";
+  if (s.estado === "vendido") return "vendido";
+  if (s.estado === "reservado" && s.reservado_em) {
+    const minutos = (Date.now() - new Date(s.reservado_em).getTime()) / 60000;
+    if (minutos < RESERVA_MINUTOS) return "reservado"; // expirou? volta a ficar livre
+  }
+  return "disponivel";
+}
+
+async function gravaStatus(id, estado){
+  if (!supabaseAtivo()) return false;
+  const corpo = {id, estado, reservado_em: estado === "reservado" ? new Date().toISOString() : null, atualizado_em: new Date().toISOString()};
+  try {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/status", {
+      method: "POST",
+      headers: {apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates"},
+      body: JSON.stringify(corpo)
+    });
+    if (r.ok) { STATUS[id] = corpo; render(); return true; }
+  } catch(e) {}
+  return false;
+}
+
+if (supabaseAtivo()) {
+  setInterval(carregaStatus, 60000); // atualiza a cada 1 min
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) carregaStatus(); });
+}
+/* ---------------------------------------------------------------- */
+
+const pixFundo = document.getElementById("pixFundo");
+const pixReservar = document.getElementById("pixReservar");
+let pixAtual = null;
+
+pixReservar.onclick = async () => {
+  if (!pixAtual) return;
+  pixReservar.disabled = true;
+  pixReservar.textContent = "Reservando...";
+  const ok = await gravaStatus(pixAtual.id, "reservado");
+  if (ok) {
+    pixReservar.textContent = "✓ Reservado por 2h pra você!";
+    mostraToast("Produto reservado! Agora manda o comprovante no WhatsApp pra garantir.");
+  } else {
+    pixReservar.disabled = false;
+    pixReservar.textContent = "🔒 Já fiz o Pix — reservar o produto (2h)";
+    mostraToast("Não consegui reservar agora — manda o comprovante no WhatsApp que a Bruna segura pra você.");
+  }
+};
+
+function comprar(p){
+  pixAtual = p;
+  pixReservar.disabled = false;
+  pixReservar.textContent = "🔒 Já fiz o Pix — reservar o produto (2h)";
+  pixReservar.style.display = (supabaseAtivo() && estadoDe(p) === "disponivel") ? "block" : "none";
+  copiaTexto(CHAVE_PIX).then(ok => {
+    document.querySelector("#pixFundo h3").textContent = ok ? "✓ Chave Pix copiada!" : "Chave Pix pra pagamento";
+  });
+  document.getElementById("pixProduto").innerHTML = "Você está comprando: <strong>" + p.nome + "</strong> · <strong>" + real(p.preco) + "</strong>";
+  document.getElementById("pixChaveTexto").textContent = CHAVE_PIX;
+  document.getElementById("pixTitular").textContent = "Titular: " + TITULAR_PIX + " — confira o nome antes de confirmar o Pix.";
+  const msg = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruninha. Estou fazendo o Pix e já mando o comprovante aqui! 🙂");
+  document.getElementById("pixZap").href = "https://wa.me/" + WHATSAPP + "?text=" + msg;
+  pixFundo.classList.add("aberta");
+}
+document.getElementById("pixFechar").onclick = () => pixFundo.classList.remove("aberta");
+pixFundo.onclick = e => { if (e.target === pixFundo) pixFundo.classList.remove("aberta"); };
+document.getElementById("pixCopiar").onclick = () => {
+  copiaTexto(CHAVE_PIX).then(ok => mostraToast(ok ? "Chave Pix copiada!" : "Não consegui copiar — toque e segure na chave pra copiar."));
+};
+
+function zapLink(p){
+  const msg = encodeURIComponent("Olá! Vi o produto \"" + p.nome + "\" (" + real(p.preco) + ") na vitrine do bazar e tenho uma dúvida.");
+  return "https://wa.me/" + WHATSAPP + "?text=" + msg;
+}
+
+function render(){
+  const lista = PRODUTOS.filter(p =>
+    (catAtiva === "Todos" || p.cat === catAtiva) &&
+    (condAtiva === "todos" || p.cond === condAtiva)
+  );
+  const nDisp = lista.filter(p => estadoDe(p) === "disponivel").length;
+  const nRes = lista.filter(p => estadoDe(p) === "reservado").length;
+  const nVend = lista.filter(p => estadoDe(p) === "vendido").length;
+  contagem.textContent = lista.length ? nDisp + " disponível(is)" + (nRes ? " · " + nRes + " reservado(s)" : "") + " · " + nVend + " vendido(s)" : "";
+  grade.innerHTML = "";
+  if (!lista.length) {
+    grade.innerHTML = '<div class="vazio">Nenhum produto nesse filtro. Volte logo — a vitrine muda toda semana! 🧺</div>';
+    return;
+  }
+  lista.forEach(p => {
+    const st = estadoDe(p); // "disponivel" | "reservado" | "vendido"
+    const temFotos = Array.isArray(p.fotos) && p.fotos.length > 0;
+    const varias = temFotos && p.fotos.length > 1;
+    let fi = 0; // foto atual deste card
+    const card = document.createElement("div");
+    card.className = "card" + (st === "vendido" ? " vendido" : "") + (st === "reservado" ? " reservado" : "");
+    const fotoInterna = temFotos
+      ? '<img src="' + p.fotos[0] + '" alt="' + p.nome + '">' +
+        (varias
+          ? '<button class="fnav prev" title="Foto anterior">‹</button>' +
+            '<button class="fnav next" title="Próxima foto">›</button>' +
+            '<div class="fdots">' + p.fotos.map((_, i) => '<span class="fdot' + (i === 0 ? ' on' : '') + '"></span>').join("") + '</div>' +
+            '<div class="fcount">1/' + p.fotos.length + '</div>'
+          : "")
+      : p.emoji;
+    card.innerHTML =
+      (st === "vendido" ? '<div class="selo-vendido"><span>VENDIDO</span></div>' : "") +
+      (st === "reservado" ? '<div class="selo-reservado"><span>RESERVADO</span></div>' : "") +
+      '<div class="badge ' + p.cond + '">' + (p.cond === "novo" ? "Novo" : "Usado") + '</div>' +
+      '<div class="foto"' + (temFotos ? "" : ' style="background:linear-gradient(135deg,' + p.grad + ')"') + '>' + fotoInterna + '</div>' +
+      '<div class="info">' +
+        '<div class="nome">' + p.nome + '</div>' +
+        '<div class="estado">' + p.estado + '</div>' +
+        '<div class="preco">' + real(p.preco) + ' <small>· 1 unidade</small></div>' +
+        (st === "vendido"
+          ? '<button class="comprar" disabled style="background:#b9b2a7;cursor:default">Vendido</button>'
+          : st === "reservado"
+            ? '<button class="comprar" disabled style="background:#c9a97e;cursor:default">Reservado · aguardando confirmação</button>'
+            : '<button class="comprar">Comprar · Pix</button><a class="zap" href="' + zapLink(p) + '" target="_blank">Dúvida? Chama no WhatsApp</a>') +
+      '</div>' +
+      (ADMIN && supabaseAtivo()
+        ? '<div class="admin-bar">' +
+            '<button data-e="disponivel"' + (st === "disponivel" ? ' class="on"' : '') + '>Livre</button>' +
+            '<button data-e="reservado"' + (st === "reservado" ? ' class="on"' : '') + '>Reservado</button>' +
+            '<button data-e="vendido"' + (st === "vendido" ? ' class="on"' : '') + '>Vendido</button>' +
+          '</div>'
+        : "");
+    if (ADMIN && supabaseAtivo()) {
+      card.querySelectorAll(".admin-bar button").forEach(b => {
+        b.onclick = () => gravaStatus(p.id, b.dataset.e);
+      });
+    }
+    if (temFotos) {
+      const img = card.querySelector(".foto img");
+      const dots = card.querySelectorAll(".fdot");
+      const count = card.querySelector(".fcount");
+      const mostra = i => {
+        fi = (i + p.fotos.length) % p.fotos.length;
+        img.src = p.fotos[fi];
+        dots.forEach((d, j) => d.classList.toggle("on", j === fi));
+        if (count) count.textContent = (fi + 1) + "/" + p.fotos.length;
+      };
+      if (varias) {
+        card.querySelector(".fnav.prev").onclick = e => { e.stopPropagation(); mostra(fi - 1); };
+        card.querySelector(".fnav.next").onclick = e => { e.stopPropagation(); mostra(fi + 1); };
+        // arrastar o dedo troca a foto
+        let x0 = null;
+        const fotoEl = card.querySelector(".foto");
+        fotoEl.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, {passive:true});
+        fotoEl.addEventListener("touchend", e => {
+          if (x0 === null) return;
+          const dx = e.changedTouches[0].clientX - x0;
+          if (Math.abs(dx) > 35) mostra(fi + (dx < 0 ? 1 : -1));
+          x0 = null;
+        }, {passive:true});
+      }
+      img.onclick = () => abreLb(p, fi); // toque na foto = tela cheia
+    }
+    if (st === "disponivel") card.querySelector(".comprar").onclick = () => comprar(p);
+    grade.appendChild(card);
+  });
+}
+
+/* ---------- lightbox (foto em tela cheia) ---------- */
+const lb = document.getElementById("lightbox");
+const lbImg = document.getElementById("lbImg");
+const lbLegenda = document.getElementById("lbLegenda");
+const lbPrev = document.getElementById("lbPrev");
+const lbNext = document.getElementById("lbNext");
+let lbFotos = [], lbIdx = 0, lbNome = "";
+
+function abreLb(p, i){
+  lbFotos = p.fotos; lbIdx = i; lbNome = p.nome;
+  const varias = lbFotos.length > 1;
+  lbPrev.style.display = varias ? "" : "none";
+  lbNext.style.display = varias ? "" : "none";
+  atualizaLb();
+  lb.classList.add("aberta");
+}
+function atualizaLb(){
+  lbImg.src = lbFotos[lbIdx];
+  lbLegenda.textContent = lbNome + (lbFotos.length > 1 ? " · foto " + (lbIdx + 1) + " de " + lbFotos.length : "");
+}
+function lbNav(d){ lbIdx = (lbIdx + d + lbFotos.length) % lbFotos.length; atualizaLb(); }
+lbPrev.onclick = e => { e.stopPropagation(); lbNav(-1); };
+lbNext.onclick = e => { e.stopPropagation(); lbNav(1); };
+document.getElementById("lbFechar").onclick = () => lb.classList.remove("aberta");
+lb.onclick = e => { if (e.target === lb) lb.classList.remove("aberta"); };
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("aberta")) return;
+  if (e.key === "Escape") lb.classList.remove("aberta");
+  if (e.key === "ArrowLeft" && lbFotos.length > 1) lbNav(-1);
+  if (e.key === "ArrowRight" && lbFotos.length > 1) lbNav(1);
+});
+let lbX0 = null;
+lb.addEventListener("touchstart", e => { lbX0 = e.touches[0].clientX; }, {passive:true});
+lb.addEventListener("touchend", e => {
+  if (lbX0 === null || lbFotos.length < 2) { lbX0 = null; return; }
+  const dx = e.changedTouches[0].clientX - lbX0;
+  if (Math.abs(dx) > 40) lbNav(dx < 0 ? 1 : -1);
+  lbX0 = null;
+}, {passive:true});
+
+document.getElementById("zapFooter").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Olá! Vim pela vitrine do bazar.");
+
+if (ADMIN) {
+  const aviso = document.createElement("div");
+  aviso.className = "admin-aviso";
+  aviso.innerHTML = supabaseAtivo()
+    ? "<b>Modo da Bruna ativo.</b> Toque em Livre / Reservado / Vendido em cada produto pra mudar o status na hora, pra todo mundo. Não compartilhe este link com a senha."
+    : "<b>Modo da Bruna:</b> o tempo real ainda não foi configurado (siga o guia PASSO-B). Por enquanto os botões de status não aparecem.";
+  document.querySelector(".contagem").before(aviso);
+}
+
+render();
+if (supabaseAtivo()) carregaStatus();
+</script>
+</body>
+</html>
