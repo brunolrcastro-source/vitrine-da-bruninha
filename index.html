@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vitrine da Bruninha — Escolha, pague e retire</title>
+<title>Vitrine da Bruna — Escolha, pague e retire</title>
 <style>
   :root{
     --terracota:#a64d68;        /* rosa profundo (principal) */
@@ -126,7 +126,7 @@
 <body>
 
 <header>
-  <h1>VITRINE DA BRUNINHA</h1>
+  <h1>VITRINE DA BRUNA</h1>
   <div class="filete"></div>
   <p>Novos e usados com preço bom · Escolha, pague no Pix e combine a retirada</p>
 </header>
@@ -383,7 +383,7 @@ function comprar(p){
   document.getElementById("pixProduto").innerHTML = "Você está comprando: <strong>" + p.nome + "</strong> · <strong>" + real(p.preco) + "</strong>";
   document.getElementById("pixChaveTexto").textContent = CHAVE_PIX;
   document.getElementById("pixTitular").textContent = "Titular: " + TITULAR_PIX + " — confira o nome antes de confirmar o Pix.";
-  const msg = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruninha. Estou fazendo o Pix e já mando o comprovante aqui! 🙂");
+  const msg = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Estou fazendo o Pix e já mando o comprovante aqui! 🙂");
   document.getElementById("pixZap").href = "https://wa.me/" + WHATSAPP + "?text=" + msg;
   pixFundo.classList.add("aberta");
 }
