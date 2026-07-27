@@ -154,6 +154,7 @@
   .pix-ou::before,.pix-ou::after{content:"";flex:1;height:1px;background:var(--borda)}
   .pix-cartao{display:block;text-align:center;background:#fff;border:1.5px solid var(--terracota);border-radius:11px;padding:12px;font-size:.92rem;color:var(--terracota-escuro);text-decoration:none;font-weight:700}
   .pix-cartao span{display:block;font-weight:400;font-size:.72rem;color:var(--texto-suave);margin-top:2px}
+  .pix-aviso-cartao{font-size:.7rem;color:var(--texto-suave);text-align:center;margin-top:7px;line-height:1.4}
   .parcela{font-size:.68rem;color:var(--texto-suave);margin-top:2px}
   @media(min-width:640px){.parcela{font-size:.74rem}}
   .pix-fechar{position:absolute;top:10px;right:14px;background:none;border:none;font-size:26px;color:var(--texto-suave);cursor:pointer;line-height:1}
@@ -253,6 +254,7 @@
     <div class="pix-regra">O produto só é seu depois que o comprovante for confirmado — quem paga primeiro leva.</div>
     <div class="pix-ou" id="pixOu" style="display:none">OU</div>
     <a class="pix-cartao" id="pixCartao" href="#" target="_blank" style="display:none">💳 Pagar no cartão<span></span></a>
+    <div class="pix-aviso-cartao" id="pixAvisoCartao" style="display:none"></div>
   </div>
 </div>
 
@@ -285,7 +287,8 @@ const RESERVA_MINUTOS = 120;          // reserva segura o produto por 2h
 const CARTAO_ATIVO = true;
 const MAX_PARCELAS = 10;      // máximo de parcelas anunciado
 const PARCELA_MINIMA = 5;     // não anuncia parcela abaixo disso (R$)
-const CARTAO_SEM_JUROS = true; // true = anuncia "sem juros" (a Bruna absorve a taxa)
+const CARTAO_SEM_JUROS = false; // false = repassa a taxa (a Bruna recebe o valor cheio)
+const AVISO_CARTAO = "O parcelamento tem acréscimo da operadora do cartão. A Bruna te manda o valor exato no link.";
 /* ============================================================ */
 
 const ADMIN = new URLSearchParams(location.search).get("admin") === ADMIN_SENHA;
@@ -317,7 +320,9 @@ function parcelamento(preco){
 function textoParcela(preco){
   const p = parcelamento(preco);
   if (!p) return "";
-  return p.n + "x de " + real(p.valor) + (CARTAO_SEM_JUROS ? " sem juros" : "");
+  // com repasse, o valor da parcela é maior que preço/n — por isso não anunciamos
+  // valor exato aqui: quem informa é o link que a Bruna gera.
+  return CARTAO_SEM_JUROS ? p.n + "x de " + real(p.valor) + " sem juros" : "até " + p.n + "x no cartão";
 }
 function mostraToast(msg){
   toast.textContent = msg;
@@ -586,16 +591,20 @@ function comprar(p){
   // opção de cartão: pede o link de pagamento pelo WhatsApp
   const elCartao = document.getElementById("pixCartao");
   const elOu = document.getElementById("pixOu");
+  const elAviso = document.getElementById("pixAvisoCartao");
   if (CARTAO_ATIVO) {
     const parc = textoParcela(p.preco);
-    const msgCartao = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Quero pagar no cartão" + (parc ? " (posso parcelar em " + parc + "?)" : "") + ". Me manda o link de pagamento, por favor 🙂");
+    const msgCartao = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Quero pagar no cartão" + (parc ? ", parcelado se possível (" + parc + ")" : "") + ". Me manda o link de pagamento, por favor 🙂");
     elCartao.href = "https://wa.me/" + WHATSAPP + "?text=" + msgCartao;
-    elCartao.querySelector("span").textContent = (parc ? "Em até " + parc + " · " : "") + "a Bruna te manda o link no WhatsApp";
+    elCartao.querySelector("span").textContent = (parc ? parc.charAt(0).toUpperCase() + parc.slice(1) + " · " : "") + "a Bruna te manda o link no WhatsApp";
     elCartao.style.display = "block";
     elOu.style.display = "flex";
+    if (!CARTAO_SEM_JUROS && parc) { elAviso.textContent = AVISO_CARTAO; elAviso.style.display = "block"; }
+    else { elAviso.style.display = "none"; }
   } else {
     elCartao.style.display = "none";
     elOu.style.display = "none";
+    elAviso.style.display = "none";
   }
   pixFundo.classList.add("aberta");
 }
@@ -610,7 +619,9 @@ if (ADMIN) {
   const topo = document.createElement("div");
   topo.className = "admin-topo";
   topo.innerHTML = '<button class="btn-add" id="btnAdd">➕ Cadastrar produto</button>' +
-    '<div class="admin-aviso"><b>Modo da Bruna ativo.</b> Cadastre produtos e use os botões em cada card. Não compartilhe este link.</div>';
+    '<div class="admin-aviso"><b>Modo da Bruna ativo.</b> Cadastre produtos e use os botões em cada card. Não compartilhe este link.' +
+    (CARTAO_ATIVO && !CARTAO_SEM_JUROS ? '<br>💳 <b>Ao gerar link de cartão:</b> no app InfinitePay, em "Parcelamento e taxas", ative <b>"Repassando taxas"</b> — assim você recebe o valor cheio.' : '') +
+    '</div>';
   document.querySelector(".contagem").before(topo);
   document.getElementById("btnAdd").onclick = abreForm;
 }
