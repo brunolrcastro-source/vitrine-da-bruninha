@@ -99,7 +99,8 @@
   .admin-topo{max-width:1060px;margin:12px auto 0;padding:0 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .admin-aviso{flex:1;min-width:200px;padding:9px 14px;background:#f6ecd8;border:1px solid #e2cba4;border-radius:10px;font-size:.8rem;color:#7a5c25}
   .btn-add{background:var(--terracota);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:var(--sombra)}
-  .admin-bar{display:flex;gap:5px;padding:8px 10px;background:#f7edf0;border-top:1px dashed var(--borda)}
+  .admin-editar{display:block;width:100%;border:none;background:var(--terracota-escuro);color:#fff;padding:8px;font-size:.72rem;font-weight:700;cursor:pointer;border-top:1px dashed var(--borda)}
+  .admin-bar{display:flex;gap:5px;padding:8px 10px;background:#f7edf0}
   .admin-bar button{flex:1;border:1px solid var(--borda);background:#fff;border-radius:7px;padding:6px 2px;font-size:.66rem;cursor:pointer;color:var(--texto-suave)}
   .admin-bar button.on{background:var(--terracota);color:#fff;border-color:var(--terracota);font-weight:700}
   .admin-bar button.perigo{color:#a33}
@@ -284,6 +285,11 @@ const RESERVA_MINUTOS = 120;          // reserva segura o produto por 2h
    CARTAO_ATIVO: false esconde a opção de cartão da vitrine.
    MAX_PARCELAS: só o texto mostrado à compradora (2x é o recomendado
    pro ticket do bazar — acima disso a taxa come a margem).           */
+/* Checkout Integrado InfinitePay: o botão Comprar leva direto pro
+   pagamento (Pix ou cartão na mesma tela) e o produto é marcado
+   vendido sozinho. Se a API falhar, cai no fluxo manual de Pix. */
+const CHECKOUT_INTEGRADO = true;
+
 const CARTAO_ATIVO = true;
 const MAX_PARCELAS = 10;      // máximo de parcelas anunciado
 const PARCELA_MINIMA = 5;     // não anuncia parcela abaixo disso (R$)
@@ -454,7 +460,8 @@ function render(){
             : '<button class="comprar">Comprar</button><a class="zap" href="' + zapLink(p) + '" target="_blank">Dúvida? Chama no WhatsApp</a>') +
       '</div>' +
       (ADMIN
-        ? '<div class="admin-bar">' +
+        ? '<button class="admin-editar">✏️ Editar produto</button>' +
+          '<div class="admin-bar">' +
             '<button data-e="disponivel"' + (st === "disponivel" ? ' class="on"' : '') + '>Livre</button>' +
             '<button data-e="reservado"' + (st === "reservado" ? ' class="on"' : '') + '>Reserv.</button>' +
             '<button data-e="vendido"' + (st === "vendido" ? ' class="on"' : '') + '>Vendido</button>' +
@@ -462,6 +469,7 @@ function render(){
           '</div>'
         : "");
     if (ADMIN) {
+      card.querySelector(".admin-editar").onclick = () => abreForm(p);
       card.querySelectorAll(".admin-bar button").forEach(b => {
         b.onclick = () => {
           if (b.dataset.e === "arquivado" && b.textContent !== "Confirma?") { b.textContent = "Confirma?"; setTimeout(() => { b.textContent = "Tirar"; }, 2500); return; }
@@ -574,7 +582,27 @@ pixReservar.onclick = async () => {
   }
 };
 
-function comprar(p){
+// Comprar: tenta o checkout integrado; se falhar, abre o Pix manual
+async function comprar(p){
+  if (CHECKOUT_INTEGRADO) {
+    mostraToast("Abrindo o pagamento seguro...");
+    try {
+      const r = await fetch("/api/checkout", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({produto_id: p.id})
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.checkout_url) { window.location.href = j.checkout_url; return; }
+      if (r.status === 409) { mostraToast(j.erro || "Esse produto já foi vendido."); carregaProdutos(); return; }
+      throw new Error(j.erro || "checkout indisponível");
+    } catch(e) {
+      mostraToast("Pagamento online fora do ar — use o Pix abaixo.");
+    }
+  }
+  abrePix(p);
+}
+
+function abrePix(p){
   pixAtual = p;
   pixReservar.disabled = false;
   pixReservar.textContent = "🔒 Já fiz o Pix — reservar o produto (2h)";
@@ -623,7 +651,7 @@ if (ADMIN) {
     (CARTAO_ATIVO && !CARTAO_SEM_JUROS ? '<br>💳 <b>Ao gerar link de cartão:</b> no app InfinitePay, em "Parcelamento e taxas", ative <b>"Repassando taxas"</b> — assim você recebe o valor cheio.' : '') +
     '</div>';
   document.querySelector(".contagem").before(topo);
-  document.getElementById("btnAdd").onclick = abreForm;
+  document.getElementById("btnAdd").onclick = () => abreForm();
 }
 
 const formFundo = document.getElementById("formFundo");
@@ -655,33 +683,51 @@ function montaCatChips(){
 }
 document.getElementById("fCat").oninput = function(){ if (this.value.trim() && catFormSel) { catFormSel = ""; montaCatChips(); } };
 
-/* fotos: acumula até 5, toque no × remove, 1ª é a capa */
+/* fotos: acumula até 5 (já existentes + novas), toque no × remove, 1ª é a capa */
+let editandoId = null;       // id do produto em edição (null = cadastro novo)
+let fotosExistentes = [];    // URLs de fotos que já estão no banco
+
 fFotos.onchange = () => {
-  const total = fotosSelecionadas.length + fFotos.files.length;
-  fotosSelecionadas = [...fotosSelecionadas, ...fFotos.files].slice(0, MAX_FOTOS);
-  if (total > MAX_FOTOS) mostraToast("Máximo de " + MAX_FOTOS + " fotos por produto — ficaram as " + MAX_FOTOS + " primeiras.");
+  const cabe = MAX_FOTOS - fotosExistentes.length - fotosSelecionadas.length;
+  const novas = [...fFotos.files];
+  if (novas.length > cabe) mostraToast("Máximo de " + MAX_FOTOS + " fotos por produto.");
+  fotosSelecionadas = [...fotosSelecionadas, ...novas.slice(0, Math.max(0, cabe))];
   fFotos.value = "";
   desenhaThumbs();
 };
 function desenhaThumbs(){
   thumbs.innerHTML = "";
-  fotosSelecionadas.forEach((f, i) => {
+  const add = (src, remover, capa) => {
     const d = document.createElement("div"); d.className = "th";
-    const img = document.createElement("img"); img.src = URL.createObjectURL(f);
+    const img = document.createElement("img"); img.src = src;
     const x = document.createElement("button"); x.type = "button"; x.className = "tira"; x.textContent = "×"; x.title = "Remover";
-    x.onclick = () => { fotosSelecionadas.splice(i, 1); desenhaThumbs(); };
+    x.onclick = remover;
     d.appendChild(img); d.appendChild(x);
-    if (i === 0) { const c = document.createElement("span"); c.className = "capa"; c.textContent = "CAPA"; d.appendChild(c); }
+    if (capa) { const c = document.createElement("span"); c.className = "capa"; c.textContent = "CAPA"; d.appendChild(c); }
     thumbs.appendChild(d);
-  });
-  document.getElementById("fotosArea").innerHTML = fotosSelecionadas.length
-    ? "📷 Adicionar mais fotos<small>" + fotosSelecionadas.length + " de " + MAX_FOTOS + " escolhida(s)</small>"
+  };
+  fotosExistentes.forEach((url, i) => add(url, () => { fotosExistentes.splice(i, 1); desenhaThumbs(); }, i === 0));
+  fotosSelecionadas.forEach((f, i) => add(URL.createObjectURL(f), () => { fotosSelecionadas.splice(i, 1); desenhaThumbs(); }, fotosExistentes.length === 0 && i === 0));
+  const total = fotosExistentes.length + fotosSelecionadas.length;
+  document.getElementById("fotosArea").innerHTML = total
+    ? "📷 Adicionar mais fotos<small>" + total + " de " + MAX_FOTOS + " escolhida(s)</small>"
     : "📷 Adicionar fotos<small>abre a galeria do celular · pode escolher várias</small>";
 }
 
-function abreForm(){
-  ["fNome","fPreco","fCat","fDesc"].forEach(id => document.getElementById(id).value = "");
-  fFotos.value = ""; fotosSelecionadas = []; formStatus.textContent = ""; catFormSel = "";
+// abreForm() cadastra novo; abreForm(produto) edita o existente
+function abreForm(p){
+  editandoId = p ? p.id : null;
+  fotosExistentes = p && Array.isArray(p.fotos) ? [...p.fotos] : [];
+  fotosSelecionadas = []; fFotos.value = ""; formStatus.textContent = "";
+  document.getElementById("fNome").value = p ? p.nome : "";
+  document.getElementById("fPreco").value = p ? p.preco : "";
+  document.getElementById("fDesc").value = p ? (p.descricao || "") : "";
+  document.getElementById("fCat").value = "";
+  catFormSel = p ? p.cat : "";
+  condSel = p ? p.cond : "usado";
+  document.querySelectorAll("#fCond label").forEach(x => x.classList.toggle("sel", x.dataset.v === condSel));
+  document.getElementById("formTitulo").textContent = p ? "✏️ Editar produto" : "➕ Cadastrar produto";
+  document.getElementById("btnSalvar").textContent = p ? "Salvar alterações" : "Salvar e publicar";
   montaCatChips(); desenhaThumbs();
   document.getElementById("btnSalvar").disabled = false;
   formFundo.classList.add("aberta");
@@ -730,25 +776,32 @@ document.getElementById("btnSalvar").onclick = async () => {
   const desc = document.getElementById("fDesc").value.trim();
   if (!nome) { formStatus.textContent = "Falta o nome do produto."; return; }
   if (!preco || preco <= 0) { formStatus.textContent = "Confere o preço."; return; }
-  if (!fotosSelecionadas.length) { formStatus.textContent = "Escolha pelo menos 1 foto."; return; }
+  if (!fotosExistentes.length && !fotosSelecionadas.length) { formStatus.textContent = "Escolha pelo menos 1 foto."; return; }
   const btn = document.getElementById("btnSalvar");
   btn.disabled = true;
   try {
-    const urls = [];
+    const urls = [...fotosExistentes];
     const base = slug(nome);
     for (let i = 0; i < fotosSelecionadas.length; i++) {
       formStatus.textContent = "Enviando foto " + (i + 1) + " de " + fotosSelecionadas.length + "...";
       const blob = await comprime(fotosSelecionadas[i]);
-      urls.push(await uploadFoto(blob, base, i + 1));
+      urls.push(await uploadFoto(blob, base, urls.length + 1));
     }
-    formStatus.textContent = "Publicando produto...";
-    const r = await fetch(SUPABASE_URL + "/rest/v1/produtos", {
-      method: "POST", headers: HJ,
-      body: JSON.stringify({nome, preco, cat, cond: condSel, descricao: desc, fotos: urls})
-    });
+    const dados = {nome, preco, cat, cond: condSel, descricao: desc, fotos: urls, atualizado_em: new Date().toISOString()};
+    let r;
+    if (editandoId) {
+      formStatus.textContent = "Salvando alterações...";
+      r = await fetch(SUPABASE_URL + "/rest/v1/produtos?id=eq." + encodeURIComponent(editandoId), {
+        method: "PATCH", headers: HJ, body: JSON.stringify(dados)
+      });
+    } else {
+      formStatus.textContent = "Publicando produto...";
+      r = await fetch(SUPABASE_URL + "/rest/v1/produtos", {method: "POST", headers: HJ, body: JSON.stringify(dados)});
+    }
     if (!r.ok) throw new Error("erro ao salvar (" + r.status + ")");
     formFundo.classList.remove("aberta");
-    mostraToast("✓ \"" + nome + "\" está na vitrine!");
+    mostraToast(editandoId ? "✓ \"" + nome + "\" atualizado!" : "✓ \"" + nome + "\" está na vitrine!");
+    editandoId = null;
     await carregaProdutos();
   } catch(e) {
     formStatus.textContent = "Deu erro: " + e.message + " — tenta de novo.";
@@ -757,8 +810,45 @@ document.getElementById("btnSalvar").onclick = async () => {
 };
 
 /* ---------- inicialização ---------- */
+/* ---------- retorno do checkout (pagamento concluído) ---------- */
+async function trataRetornoPagamento(){
+  const q = new URLSearchParams(location.search);
+  const order_nsu = q.get("order_nsu");
+  const transacao = q.get("transaction_nsu");
+  const recibo = q.get("receipt_url");
+  if (!order_nsu && !transacao) return;
+
+  // marca vendido também pelo navegador (o webhook faz o mesmo — os dois se cobrem)
+  if (order_nsu) {
+    try {
+      await fetch(SUPABASE_URL + "/rest/v1/produtos?order_nsu=eq." + encodeURIComponent(order_nsu), {
+        method: "PATCH", headers: HJ,
+        body: JSON.stringify({status: "vendido", reservado_em: null, atualizado_em: new Date().toISOString()})
+      });
+    } catch(e) {}
+  }
+
+  const zap = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Oi Bruna! Acabei de pagar pela vitrine 🎉 Pedido " + (order_nsu || transacao) + ". Quero combinar a retirada!");
+  const box = document.createElement("div");
+  box.className = "pix-fundo aberta";
+  box.innerHTML =
+    '<div class="pix-box" style="text-align:center">' +
+      '<div style="font-size:44px;line-height:1">🎉</div>' +
+      '<h3 style="margin:6px 0 4px">Pagamento confirmado!</h3>' +
+      '<div class="pix-produto">O produto é seu. A Bruna já foi avisada — agora é só combinar a retirada ou a entrega.</div>' +
+      '<a class="pix-zap" href="' + zap + '" target="_blank">💬 Combinar a retirada no WhatsApp</a>' +
+      (recibo ? '<a class="pix-cartao" style="margin-top:10px" href="' + recibo + '" target="_blank">📄 Ver comprovante</a>' : "") +
+      '<div class="pix-regra" style="margin-top:12px"><a href="#" id="fecharSucesso" style="color:var(--terracota-escuro)">Voltar pra vitrine</a></div>' +
+    '</div>';
+  document.body.appendChild(box);
+  const limpa = () => { history.replaceState({}, "", location.pathname + (ADMIN ? "?admin=" + ADMIN_SENHA : "")); box.remove(); carregaProdutos(); };
+  box.querySelector("#fecharSucesso").onclick = e => { e.preventDefault(); limpa(); };
+  box.onclick = e => { if (e.target === box) limpa(); };
+}
+
 document.getElementById("zapFooter").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Olá! Vim pela Vitrine da Bruna.");
 carregaProdutos();
+trataRetornoPagamento();
 setInterval(carregaProdutos, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) carregaProdutos(); });
 </script>
