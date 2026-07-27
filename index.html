@@ -150,8 +150,12 @@
   .pix-reservar:disabled{opacity:.55;cursor:default}
   .pix-zap{display:block;text-align:center;background:#25d366;color:#fff;text-decoration:none;font-weight:700;padding:13px;border-radius:11px;font-size:.95rem}
   .pix-regra{font-size:.74rem;color:var(--texto-suave);text-align:center;margin-top:10px}
-  .pix-cartao{display:block;text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--borda);font-size:.84rem;color:var(--terracota-escuro);text-decoration:none;font-weight:600}
+  .pix-ou{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--texto-suave);font-size:.72rem;letter-spacing:1px}
+  .pix-ou::before,.pix-ou::after{content:"";flex:1;height:1px;background:var(--borda)}
+  .pix-cartao{display:block;text-align:center;background:#fff;border:1.5px solid var(--terracota);border-radius:11px;padding:12px;font-size:.92rem;color:var(--terracota-escuro);text-decoration:none;font-weight:700}
   .pix-cartao span{display:block;font-weight:400;font-size:.72rem;color:var(--texto-suave);margin-top:2px}
+  .parcela{font-size:.68rem;color:var(--texto-suave);margin-top:2px}
+  @media(min-width:640px){.parcela{font-size:.74rem}}
   .pix-fechar{position:absolute;top:10px;right:14px;background:none;border:none;font-size:26px;color:var(--texto-suave);cursor:pointer;line-height:1}
 
   /* lightbox */
@@ -247,7 +251,8 @@
     <button class="pix-reservar" id="pixReservar" style="display:none">🔒 Já fiz o Pix — reservar o produto (2h)</button>
     <a class="pix-zap" id="pixZap" href="#" target="_blank">💬 Enviar comprovante no WhatsApp</a>
     <div class="pix-regra">O produto só é seu depois que o comprovante for confirmado — quem paga primeiro leva.</div>
-    <a class="pix-cartao" id="pixCartao" href="#" target="_blank" style="display:none">💳 Prefere pagar no cartão?<span>A Bruna te manda o link de pagamento no WhatsApp</span></a>
+    <div class="pix-ou" id="pixOu" style="display:none">OU</div>
+    <a class="pix-cartao" id="pixCartao" href="#" target="_blank" style="display:none">💳 Pagar no cartão<span></span></a>
   </div>
 </div>
 
@@ -278,7 +283,9 @@ const RESERVA_MINUTOS = 120;          // reserva segura o produto por 2h
    MAX_PARCELAS: só o texto mostrado à compradora (2x é o recomendado
    pro ticket do bazar — acima disso a taxa come a margem).           */
 const CARTAO_ATIVO = true;
-const MAX_PARCELAS = 2;
+const MAX_PARCELAS = 10;      // máximo de parcelas anunciado
+const PARCELA_MINIMA = 5;     // não anuncia parcela abaixo disso (R$)
+const CARTAO_SEM_JUROS = true; // true = anuncia "sem juros" (a Bruna absorve a taxa)
 /* ============================================================ */
 
 const ADMIN = new URLSearchParams(location.search).get("admin") === ADMIN_SENHA;
@@ -300,6 +307,18 @@ const contagem = document.getElementById("contagem");
 const toast = document.getElementById("toast");
 
 function real(v){ return "R$ " + Number(v).toFixed(2).replace(".", ",").replace(",00",""); }
+
+// maior parcelamento possível sem deixar a parcela abaixo do mínimo
+function parcelamento(preco){
+  const n = Math.min(MAX_PARCELAS, Math.floor(Number(preco) / PARCELA_MINIMA));
+  if (n < 2) return null;
+  return {n, valor: Number(preco) / n};
+}
+function textoParcela(preco){
+  const p = parcelamento(preco);
+  if (!p) return "";
+  return p.n + "x de " + real(p.valor) + (CARTAO_SEM_JUROS ? " sem juros" : "");
+}
 function mostraToast(msg){
   toast.textContent = msg;
   toast.classList.add("mostra");
@@ -422,6 +441,7 @@ function render(){
         '<div class="nome">' + p.nome + '</div>' +
         '<div class="estado">' + (p.descricao || "") + '</div>' +
         '<div class="preco">' + real(p.preco) + ' <small>· 1 unidade</small></div>' +
+        (CARTAO_ATIVO && st !== "vendido" && textoParcela(p.preco) ? '<div class="parcela">ou ' + textoParcela(p.preco) + '</div>' : "") +
         (st === "vendido"
           ? '<button class="comprar" disabled style="background:#b9b2a7;cursor:default">Vendido</button>'
           : st === "reservado"
@@ -565,13 +585,17 @@ function comprar(p){
 
   // opção de cartão: pede o link de pagamento pelo WhatsApp
   const elCartao = document.getElementById("pixCartao");
+  const elOu = document.getElementById("pixOu");
   if (CARTAO_ATIVO) {
-    const msgCartao = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Posso pagar no cartão? Me manda o link de pagamento, por favor 🙂");
+    const parc = textoParcela(p.preco);
+    const msgCartao = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Quero pagar no cartão" + (parc ? " (posso parcelar em " + parc + "?)" : "") + ". Me manda o link de pagamento, por favor 🙂");
     elCartao.href = "https://wa.me/" + WHATSAPP + "?text=" + msgCartao;
-    elCartao.querySelector("span").textContent = "A Bruna te manda o link de pagamento no WhatsApp" + (MAX_PARCELAS > 1 ? " · em até " + MAX_PARCELAS + "x" : "");
+    elCartao.querySelector("span").textContent = (parc ? "Em até " + parc + " · " : "") + "a Bruna te manda o link no WhatsApp";
     elCartao.style.display = "block";
+    elOu.style.display = "flex";
   } else {
     elCartao.style.display = "none";
+    elOu.style.display = "none";
   }
   pixFundo.classList.add("aberta");
 }
