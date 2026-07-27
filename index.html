@@ -150,6 +150,8 @@
   .pix-reservar:disabled{opacity:.55;cursor:default}
   .pix-zap{display:block;text-align:center;background:#25d366;color:#fff;text-decoration:none;font-weight:700;padding:13px;border-radius:11px;font-size:.95rem}
   .pix-regra{font-size:.74rem;color:var(--texto-suave);text-align:center;margin-top:10px}
+  .pix-cartao{display:block;text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--borda);font-size:.84rem;color:var(--terracota-escuro);text-decoration:none;font-weight:600}
+  .pix-cartao span{display:block;font-weight:400;font-size:.72rem;color:var(--texto-suave);margin-top:2px}
   .pix-fechar{position:absolute;top:10px;right:14px;background:none;border:none;font-size:26px;color:var(--texto-suave);cursor:pointer;line-height:1}
 
   /* lightbox */
@@ -172,7 +174,7 @@
   <div class="avatar"><img src="https://vitrine-da-bruninha.vercel.app/bruna.jpg" alt="Bruna"></div>
   <h1>VITRINE DA BRUNA</h1>
   <div class="filete"></div>
-  <p>Novos e usados com preço bom · Escolha, pague no Pix e combine a retirada</p>
+  <p>Novos e usados com preço bom · Pague no Pix ou cartão e combine a retirada</p>
 </header>
 
 <div class="regra">
@@ -245,6 +247,7 @@
     <button class="pix-reservar" id="pixReservar" style="display:none">🔒 Já fiz o Pix — reservar o produto (2h)</button>
     <a class="pix-zap" id="pixZap" href="#" target="_blank">💬 Enviar comprovante no WhatsApp</a>
     <div class="pix-regra">O produto só é seu depois que o comprovante for confirmado — quem paga primeiro leva.</div>
+    <a class="pix-cartao" id="pixCartao" href="#" target="_blank" style="display:none">💳 Prefere pagar no cartão?<span>A Bruna te manda o link de pagamento no WhatsApp</span></a>
   </div>
 </div>
 
@@ -269,6 +272,13 @@ const SUPABASE_URL = "https://vckybyjublbmisoiegdk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OdJyxx3Bsd0HTN-cwIGFog_EXSvcP4u"; // chave pública
 const ADMIN_SENHA  = "254179";        // senha do modo da Bruna
 const RESERVA_MINUTOS = 120;          // reserva segura o produto por 2h
+
+/* cartão de crédito — a Bruna gera o link no app InfinitePay e manda no zap.
+   CARTAO_ATIVO: false esconde a opção de cartão da vitrine.
+   MAX_PARCELAS: só o texto mostrado à compradora (2x é o recomendado
+   pro ticket do bazar — acima disso a taxa come a margem).           */
+const CARTAO_ATIVO = true;
+const MAX_PARCELAS = 2;
 /* ============================================================ */
 
 const ADMIN = new URLSearchParams(location.search).get("admin") === ADMIN_SENHA;
@@ -416,7 +426,7 @@ function render(){
           ? '<button class="comprar" disabled style="background:#b9b2a7;cursor:default">Vendido</button>'
           : st === "reservado"
             ? '<button class="comprar" disabled style="background:#c9a97e;cursor:default">Reservado</button>'
-            : '<button class="comprar">Comprar · Pix</button><a class="zap" href="' + zapLink(p) + '" target="_blank">Dúvida? Chama no WhatsApp</a>') +
+            : '<button class="comprar">Comprar</button><a class="zap" href="' + zapLink(p) + '" target="_blank">Dúvida? Chama no WhatsApp</a>') +
       '</div>' +
       (ADMIN
         ? '<div class="admin-bar">' +
@@ -552,6 +562,17 @@ function comprar(p){
   document.getElementById("pixTitular").textContent = "Titular: " + TITULAR_PIX + " — confira o nome antes de confirmar o Pix.";
   const msg = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Estou fazendo o Pix e já mando o comprovante aqui! 🙂");
   document.getElementById("pixZap").href = "https://wa.me/" + WHATSAPP + "?text=" + msg;
+
+  // opção de cartão: pede o link de pagamento pelo WhatsApp
+  const elCartao = document.getElementById("pixCartao");
+  if (CARTAO_ATIVO) {
+    const msgCartao = encodeURIComponent("Oi! Quero o produto \"" + p.nome + "\" (" + real(p.preco) + ") da Vitrine da Bruna. Posso pagar no cartão? Me manda o link de pagamento, por favor 🙂");
+    elCartao.href = "https://wa.me/" + WHATSAPP + "?text=" + msgCartao;
+    elCartao.querySelector("span").textContent = "A Bruna te manda o link de pagamento no WhatsApp" + (MAX_PARCELAS > 1 ? " · em até " + MAX_PARCELAS + "x" : "");
+    elCartao.style.display = "block";
+  } else {
+    elCartao.style.display = "none";
+  }
   pixFundo.classList.add("aberta");
 }
 document.getElementById("pixFechar").onclick = () => pixFundo.classList.remove("aberta");
