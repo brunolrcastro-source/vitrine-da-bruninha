@@ -828,13 +828,29 @@ async function trataRetornoPagamento(){
     } catch(e) {}
   }
 
-  const zap = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Oi Bruna! Acabei de pagar pela vitrine 🎉 Pedido " + (order_nsu || transacao) + ". Quero combinar a retirada!");
+  // descobre QUAL produto foi comprado (order_nsu = id do produto + "-" + hora)
+  let comprado = null;
+  if (order_nsu) {
+    const idProduto = order_nsu.substring(0, order_nsu.lastIndexOf("-"));
+    comprado = PRODUTOS.find(x => x.id === idProduto) || null;
+    if (!comprado && idProduto) {
+      try {
+        const rr = await fetch(SUPABASE_URL + "/rest/v1/produtos?id=eq." + encodeURIComponent(idProduto) + "&select=nome,preco", {headers: H});
+        const ll = await rr.json();
+        if (Array.isArray(ll) && ll[0]) comprado = ll[0];
+      } catch(e) {}
+    }
+  }
+  const oQue = comprado ? comprado.nome + " (" + real(comprado.preco) + ")" : "Pedido " + (order_nsu || transacao);
+
+  const zap = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Oi Bruna! Acabei de comprar na vitrine: " + oQue + ". Ja paguei! Quero combinar a retirada. (pedido " + String(order_nsu || transacao).slice(-6) + ")");
   const box = document.createElement("div");
   box.className = "pix-fundo aberta";
   box.innerHTML =
     '<div class="pix-box" style="text-align:center">' +
       '<div style="font-size:44px;line-height:1">🎉</div>' +
       '<h3 style="margin:6px 0 4px">Pagamento confirmado!</h3>' +
+      (comprado ? '<div style="font-weight:700;color:var(--terracota-escuro);margin:6px 0">' + comprado.nome + ' · ' + real(comprado.preco) + '</div>' : "") +
       '<div class="pix-produto">O produto é seu. A Bruna já foi avisada — agora é só combinar a retirada ou a entrega.</div>' +
       '<a class="pix-zap" href="' + zap + '" target="_blank">💬 Combinar a retirada no WhatsApp</a>' +
       (recibo ? '<a class="pix-cartao" style="margin-top:10px" href="' + recibo + '" target="_blank">📄 Ver comprovante</a>' : "") +
