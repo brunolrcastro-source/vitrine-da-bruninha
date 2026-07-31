@@ -99,7 +99,21 @@
   .admin-topo{max-width:1060px;margin:12px auto 0;padding:0 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .admin-aviso{flex:1;min-width:200px;padding:9px 14px;background:#f6ecd8;border:1px solid #e2cba4;border-radius:10px;font-size:.8rem;color:#7a5c25}
   .btn-add{background:var(--terracota);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:var(--sombra)}
-  .admin-editar{display:block;width:100%;border:none;background:var(--terracota-escuro);color:#fff;padding:8px;font-size:.72rem;font-weight:700;cursor:pointer;border-top:1px dashed var(--borda)}
+  .admin-topo-btns{display:flex;border-top:1px dashed var(--borda)}
+  .admin-editar,.admin-link{flex:1;border:none;background:var(--terracota-escuro);color:#fff;padding:8px 4px;font-size:.7rem;font-weight:700;cursor:pointer}
+  .admin-link{background:#7d4a5f;border-left:1px solid rgba(255,255,255,.25)}
+  .caixa-links{max-width:1060px;margin:12px auto 0;padding:0 16px}
+  .caixa-links .box{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:13px 14px;box-shadow:var(--sombra)}
+  .caixa-links h4{font-size:.82rem;color:var(--terracota-escuro);margin-bottom:9px;font-family:Georgia,serif}
+  .linha-link{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .linha-link:last-child{margin-bottom:0}
+  .linha-link .rot{flex:1;min-width:0}
+  .linha-link .rot b{display:block;font-size:.76rem;color:var(--texto)}
+  .linha-link .rot span{display:block;font-size:.68rem;color:var(--texto-suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .linha-link button{background:var(--terracota);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.74rem;font-weight:700;cursor:pointer;white-space:nowrap}
+  .linha-link button.sec{background:#7d4a5f}
+  .foco-aviso{max-width:1060px;margin:12px auto 0;padding:11px 14px;background:#fbeef1;border:1px solid var(--borda);border-radius:10px;font-size:.85rem;color:var(--terracota-escuro);text-align:center}
+  .foco-aviso a{color:var(--terracota);font-weight:700}
   .admin-bar{display:flex;gap:5px;padding:8px 10px;background:#f7edf0}
   .admin-bar button{flex:1;border:1px solid var(--borda);background:#fff;border-radius:7px;padding:6px 2px;font-size:.66rem;cursor:pointer;color:var(--texto-suave)}
   .admin-bar button.on{background:var(--terracota);color:#fff;border-color:var(--terracota);font-weight:700}
@@ -317,6 +331,11 @@ const toast = document.getElementById("toast");
 
 function real(v){ return "R$ " + Number(v).toFixed(2).replace(".", ",").replace(",00",""); }
 
+// link direto de um produto, pra mandar no WhatsApp
+const SITE_BASE = location.origin + location.pathname;
+function linkProduto(p){ return SITE_BASE + "?p=" + encodeURIComponent(p.id); }
+let produtoFocado = new URLSearchParams(location.search).get("p");
+
 // maior parcelamento possível sem deixar a parcela abaixo do mínimo
 function parcelamento(preco){
   const n = Math.min(MAX_PARCELAS, Math.floor(Number(preco) / PARCELA_MINIMA));
@@ -412,10 +431,31 @@ function zapLink(p){
 
 /* ---------- render ---------- */
 function render(){
-  const lista = PRODUTOS.filter(p =>
-    (catAtiva === "Todos" || p.cat === catAtiva) &&
-    (condAtiva === "todos" || p.cond === condAtiva)
-  );
+  // link direto de produto: mostra só ele, com atalho pra vitrine inteira
+  const avisoAntigo = document.querySelector(".foco-aviso");
+  if (avisoAntigo) avisoAntigo.remove();
+  let lista;
+  if (produtoFocado) {
+    lista = PRODUTOS.filter(p => p.id === produtoFocado);
+    const aviso = document.createElement("div");
+    aviso.className = "foco-aviso";
+    aviso.innerHTML = lista.length
+      ? 'Você abriu um produto específico · <a href="#" id="verTudo">ver a vitrine inteira</a>'
+      : 'Esse produto não está mais disponível 😕 · <a href="#" id="verTudo">ver a vitrine inteira</a>';
+    document.querySelector(".contagem").before(aviso);
+    aviso.querySelector("#verTudo").onclick = e => {
+      e.preventDefault();
+      produtoFocado = null;
+      history.replaceState({}, "", location.pathname + (ADMIN ? "?admin=" + ADMIN_SENHA : ""));
+      render();
+    };
+  } else {
+    lista = PRODUTOS.filter(p =>
+      (catAtiva === "Todos" || p.cat === catAtiva) &&
+      (condAtiva === "todos" || p.cond === condAtiva)
+    );
+  }
+  document.querySelector(".filtros").style.display = produtoFocado ? "none" : "";
   const nDisp = lista.filter(p => estadoDe(p) === "disponivel").length;
   const nRes = lista.filter(p => estadoDe(p) === "reservado").length;
   const nVend = lista.filter(p => estadoDe(p) === "vendido").length;
@@ -460,7 +500,7 @@ function render(){
             : '<button class="comprar">Comprar</button><a class="zap" href="' + zapLink(p) + '" target="_blank">Dúvida? Chama no WhatsApp</a>') +
       '</div>' +
       (ADMIN
-        ? '<button class="admin-editar">✏️ Editar produto</button>' +
+        ? '<div class="admin-topo-btns"><button class="admin-editar">✏️ Editar</button><button class="admin-link">🔗 Copiar link</button></div>' +
           '<div class="admin-bar">' +
             '<button data-e="disponivel"' + (st === "disponivel" ? ' class="on"' : '') + '>Livre</button>' +
             '<button data-e="reservado"' + (st === "reservado" ? ' class="on"' : '') + '>Reserv.</button>' +
@@ -470,6 +510,10 @@ function render(){
         : "");
     if (ADMIN) {
       card.querySelector(".admin-editar").onclick = () => abreForm(p);
+      card.querySelector(".admin-link").onclick = () => {
+        const msg = p.nome + " — " + real(p.preco) + "\n" + linkProduto(p);
+        copiaTexto(msg).then(ok => mostraToast(ok ? "Link copiado! É só colar no WhatsApp 📋" : "Não consegui copiar: " + linkProduto(p)));
+      };
       card.querySelectorAll(".admin-bar button").forEach(b => {
         b.onclick = () => {
           if (b.dataset.e === "arquivado" && b.textContent !== "Confirma?") { b.textContent = "Confirma?"; setTimeout(() => { b.textContent = "Tirar"; }, 2500); return; }
@@ -652,6 +696,24 @@ if (ADMIN) {
     '</div>';
   document.querySelector(".contagem").before(topo);
   document.getElementById("btnAdd").onclick = () => abreForm();
+
+  // caixa com os dois links da loja, sempre à mão
+  const linkLoja = SITE_BASE;
+  const linkPainel = SITE_BASE + "?admin=" + ADMIN_SENHA;
+  const cx = document.createElement("div");
+  cx.className = "caixa-links";
+  cx.innerHTML =
+    '<div class="box"><h4>📎 Seus links</h4>' +
+      '<div class="linha-link"><div class="rot"><b>Link da loja</b><span>' + linkLoja + '</span></div>' +
+        '<button id="copiaLoja">Copiar</button></div>' +
+      '<div class="linha-link"><div class="rot"><b>Link do painel — só seu 🔒</b><span>' + linkPainel + '</span></div>' +
+        '<button class="sec" id="copiaPainel">Copiar</button></div>' +
+    '</div>';
+  topo.after(cx);
+  cx.querySelector("#copiaLoja").onclick = () =>
+    copiaTexto(linkLoja).then(ok => mostraToast(ok ? "Link da loja copiado! Pode mandar pras amigas 📋" : linkLoja));
+  cx.querySelector("#copiaPainel").onclick = () =>
+    copiaTexto(linkPainel).then(ok => mostraToast(ok ? "Link do painel copiado — não compartilhe! 🔒" : linkPainel));
 }
 
 const formFundo = document.getElementById("formFundo");
